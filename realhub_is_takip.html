@@ -227,7 +227,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .stat-val{font-size:22px;font-weight:700;font-family:'DM Mono',monospace}
 .stat-lbl{font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
 
-/* TOAST */
+/* ADMİN PANELİ */
+.admin-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1b1e 0%,#2d2f33 100%);padding:20px}
+.admin-box{background:var(--surface);border-radius:16px;padding:0;width:100%;max-width:900px;box-shadow:0 20px 60px rgba(0,0,0,.4);overflow:hidden}
+.admin-head{background:var(--gray-dark);padding:20px 28px;display:flex;align-items:center;justify-content:space-between}
+.admin-head-title{font-size:16px;font-weight:700;color:#fff;display:flex;align-items:center;gap:10px}
+.admin-badge{background:var(--gold);color:var(--gray-dark);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.admin-body{padding:24px}
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.admin-stat{background:var(--gray-light);border-radius:var(--rs);padding:12px;text-align:center;border:1px solid var(--gray-mid)}
+.admin-stat-val{font-size:22px;font-weight:700;font-family:'DM Mono',monospace}
+.admin-stat-lbl{font-size:10px;color:var(--t3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.admin-table{width:100%;border-collapse:collapse;margin-top:8px}
+.admin-table th{padding:8px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;border-bottom:2px solid var(--gray-mid);background:var(--gray-light)}
+.admin-table td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--gray-mid);vertical-align:middle}
+.admin-table tr:last-child td{border:none}
+.admin-table tr:hover td{background:var(--gray-light)}
+.user-status{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.us-aktif{background:var(--gl);color:var(--green)}
+.us-pasif{background:var(--gray-light);color:var(--t3)}
+.link-box{background:var(--gray-light);border:1.5px solid var(--gray-mid);border-radius:var(--rs);padding:10px 14px;font-size:12px;font-family:'DM Mono',monospace;word-break:break-all;margin-top:6px;cursor:pointer;transition:border-color .15s}
+.link-box:hover{border-color:var(--gold);background:var(--gold-light)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--gray-dark);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:999;box-shadow:var(--shm);animation:tin .2s ease}
 @keyframes tin{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 
@@ -284,6 +304,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
     <p style="text-align:center;font-size:12px;color:var(--t3);margin-top:10px;cursor:pointer" onclick="kayitGoster()">
       Hesabın yok mu? <span style="color:var(--amber);font-weight:600">Kayıt Ol</span>
     </p>
+    <p style="text-align:center;font-size:11px;color:var(--t3);margin-top:6px;cursor:pointer" onclick="adminGirisGoster()">
+      🔐 <span style="color:var(--t3)">Yönetici Girişi</span>
+    </p>
+
+    <div id="admin-giris-wrap" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-mid)">
+      <div class="login-field">
+        <label>Admin Şifresi</label>
+        <input id="admin-pass" type="password" placeholder="••••••••">
+      </div>
+      <button class="login-btn" style="background:var(--gray-dark);color:#fff" onclick="adminGiris()">Admin Paneli Aç</button>
+    </div>
 
     <div class="login-footer">
       <div class="powered-login">
@@ -792,9 +823,12 @@ function gunSec(tarih){
           <div class="hat-icon ${ht.cls}">${ht.icon}</div>
           <div class="hat-info">
             <div class="hat-baslik">${h.baslik}</div>
-            <div class="hat-alt">${ht.label}${h.tutar?' · '+parseFloat(h.tutar).toLocaleString('tr-TR')+' ₺':''}</div>
+            <div class="hat-alt">${ht.label}${h.tutar?' · '+parseFloat(h.tutar).toLocaleString('tr-TR')+' ₺':''}${h.not?' · '+h.not:''}</div>
           </div>
-          <button class="btn btn-sm btn-d" onclick="hatSil('${h.id}','${tarih}')">Sil</button>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button class="btn btn-sm" onclick="hatDuzenle('${h.id}','${tarih}')">Düzenle</button>
+            <button class="btn btn-sm btn-d" onclick="hatSil('${h.id}','${tarih}')">Sil</button>
+          </div>
         </div>`;
       }).join(''):'<div class="hat-empty">Bu gün için hatırlatma yok.<br><button class="btn btn-sm btn-gold" style="margin-top:12px" onclick="acHatirlatmaGun(\''+tarih+'\')">+ Hatırlatma Ekle</button></div>'}
     </div>
@@ -824,15 +858,16 @@ function hatirlatmaListele(filtreTarih){
     else if(g<=3){sureCls='acil';sureTxt=g+' gün';}
     else if(g<=7){sureCls='yakin';sureTxt=g+' gün';}
     else{sureCls='ok';sureTxt=g+' gün';}
-    return `<div class="hat-item ${g<0?'gecmis':g===0?'bugun-hat':g<=3?'yaklasiyor':''}" onclick="gunSec('${h.tarih}')">
+    return `<div class="hat-item ${g<0?'gecmis':g===0?'bugun-hat':g<=3?'yaklasiyor':''}">
       <div class="hat-icon ${ht.cls}">${ht.icon}</div>
-      <div class="hat-info">
+      <div class="hat-info" onclick="gunSec('${h.tarih}')" style="cursor:pointer">
         <div class="hat-baslik">${h.baslik}</div>
         <div class="hat-alt">${ht.label}${h.tutar?' · '+parseFloat(h.tutar).toLocaleString('tr-TR')+' ₺':''}${h.not?' · '+h.not:''}</div>
       </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace;margin-bottom:2px">${h.tarih}</div>
+      <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <div style="font-size:10px;color:var(--t3);font-family:'DM Mono',monospace">${h.tarih}</div>
         <div class="hat-sure ${sureCls}">${sureTxt}</div>
+        <button class="btn btn-sm" style="font-size:10px;padding:2px 7px" onclick="hatDuzenle('${h.id}',null)">Düzenle</button>
       </div>
     </div>`;
   }).join('');
@@ -844,6 +879,60 @@ function hatirlatmaKontrol(){
   if(acil.length>0) setTimeout(()=>toast(`⏰ Bugün ${acil.length} hatırlatmanız var!`,5000),1000);
   const yakin=hat.filter(h=>{const g=gunFarki(h.tarih);return g!==null&&g>0&&g<=3});
   if(yakin.length>0) setTimeout(()=>toast(`📅 ${yakin.length} yaklaşan hatırlatma (3 gün içinde)`,5000),3000);
+}
+
+function hatDuzenle(id, geriTarih){
+  const h=loadHat().find(x=>x.id===id);if(!h)return;
+  showModal(`<div class="modal">
+    <div class="mh">
+      <span class="mh-title">✏️ Hatırlatma Düzenle</span>
+      <button class="btn btn-icon" onclick="${geriTarih?`gunSec('${geriTarih}')`:closeModal()}">×</button>
+    </div>
+    <div class="mb">
+      <div class="fg">
+        <div class="field fc"><label>Başlık</label>
+          <input id="hd-baslik" value="${esc(h.baslik)}" placeholder="Hatırlatma başlığı…">
+        </div>
+        <div class="field"><label>Tarih</label>
+          <input id="hd-tarih" type="date" value="${h.tarih}">
+        </div>
+        <div class="field"><label>Kategori</label>
+          <select id="hd-tip">
+            ${HAT_TIPLER.map(t=>`<option value="${t.id}" ${h.tip===t.id?'selected':''}>${t.icon} ${t.label}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Tutar (opsiyonel)</label>
+          <input id="hd-tutar" type="number" value="${h.tutar||''}" placeholder="0">
+        </div>
+        <div class="field fc"><label>Not</label>
+          <textarea id="hd-not" placeholder="Detaylar, not…" style="min-height:60px">${esc(h.not)}</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-d" onclick="hatSil('${id}','${geriTarih||''}')">Sil</button>
+      <button class="btn" onclick="${geriTarih?`gunSec('${geriTarih}')`:closeModal()}">İptal</button>
+      <button class="btn btn-gold" onclick="hatKaydet('${id}','${geriTarih||''}')">Güncelle</button>
+    </div>
+  </div>`);
+}
+
+function hatKaydet(id, geriTarih){
+  const b=document.getElementById('hd-baslik').value.trim();
+  if(!b){alert('Başlık zorunlu!');return}
+  const hat=loadHat();
+  const h=hat.find(x=>x.id===id);
+  if(h){
+    h.baslik=b;
+    h.tarih=document.getElementById('hd-tarih').value;
+    h.tip=document.getElementById('hd-tip').value;
+    h.tutar=document.getElementById('hd-tutar').value;
+    h.not=document.getElementById('hd-not').value;
+    saveHat(hat);
+    toast('Hatırlatma güncellendi ✓');
+    if(geriTarih) gunSec(geriTarih);
+    else{closeModal();if(aktifView==='takvim')renderTakvim(document.getElementById('main-content'));}
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -1109,8 +1198,247 @@ function mailGonder2(id){if(aktifSM){aktifSM.remove();aktifSM=null;}const is=loa
 function kopyala2(id){if(aktifSM){aktifSM.remove();aktifSM=null;}navigator.clipboard.writeText(isMetin(id)).then(()=>toast('Kopyalandı ✓')).catch(()=>alert(isMetin(id)))}
 
 // ══════════════════════════════════════════════
-// MODAL
+// ADMİN PANELİ
 // ══════════════════════════════════════════════
+const ADMIN_PASS_KEY='rh_admin_pass';
+
+function adminSifre(){
+  return localStorage.getItem(ADMIN_PASS_KEY)||'realhub2024';
+}
+
+function adminGirisGoster(){
+  const w=document.getElementById('admin-giris-wrap');
+  w.style.display=w.style.display==='none'?'block':'none';
+}
+
+function adminGiris(){
+  const p=document.getElementById('admin-pass').value;
+  if(p!==adminSifre()){alert('Hatalı admin şifresi!');return}
+  document.getElementById('admin-pass').value='';
+  document.getElementById('admin-giris-wrap').style.display='none';
+  showModal(adminPanelHTML());
+}
+
+function adminPanelHTML(){
+  const kullanicilar=loadKullanicilar();
+  const appUrl=window.location.href.split('?')[0];
+  const bugunStr=new Date().toLocaleDateString('tr-TR');
+  return `<div class="modal" style="max-width:860px">
+    <div class="mh" style="background:var(--gray-dark);border-radius:var(--r) var(--r) 0 0">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="mh-title" style="color:#fff">🔐 Admin Paneli</span>
+        <span class="admin-badge">YÖNETİCİ</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" style="background:var(--gold);border-color:var(--gold);font-weight:700;color:var(--gray-dark)" onclick="acYeniKullanici()">+ Kullanıcı Ekle</button>
+        <button class="btn btn-sm" style="color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.3);background:none" onclick="adminSifreDegistir()">🔑 Şifre Değiştir</button>
+        <button class="btn btn-icon" style="color:#fff;background:none;border-color:rgba(255,255,255,.2)" onclick="closeModal()">×</button>
+      </div>
+    </div>
+    <div class="mb" style="padding:20px">
+      <div class="admin-stats">
+        <div class="admin-stat"><div class="admin-stat-val">${kullanicilar.length}</div><div class="admin-stat-lbl">Toplam Kullanıcı</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" style="color:var(--green)">${kullanicilar.filter(k=>k.aktif!==false).length}</div><div class="admin-stat-lbl">Aktif</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" style="color:var(--t3)">${kullanicilar.filter(k=>k.aktif===false).length}</div><div class="admin-stat-lbl">Pasif</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" style="color:var(--gold)">${bugunStr}</div><div class="admin-stat-lbl">Bugün</div></div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:700">Kayıtlı Kullanıcılar</span>
+        <input type="search" placeholder="Ara…" oninput="adminFiltre(this.value)" style="font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 10px;border:1px solid var(--gray-mid);border-radius:var(--rs);outline:none;width:180px">
+      </div>
+
+      ${kullanicilar.length?`
+      <div style="overflow-x:auto;border:1px solid var(--gray-mid);border-radius:var(--rs)">
+        <table class="admin-table" id="admin-tablo">
+          <thead><tr>
+            <th>#</th><th>Kullanıcı Adı</th><th>Sektörler</th><th>Kayıt Tarihi</th><th>Durum</th><th>İşlem</th>
+          </tr></thead>
+          <tbody id="admin-tbody">
+            ${adminSatirlar(kullanicilar)}
+          </tbody>
+        </table>
+      </div>`:`<div style="text-align:center;padding:32px;color:var(--t3)">Henüz kayıtlı kullanıcı yok.</div>`}
+
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--gray-mid)">
+        <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">📎 Paylaşım Linki</div>
+        <div class="link-box" onclick="linkKopyala('${appUrl}')" title="Kopyalamak için tıkla">
+          🔗 ${appUrl}
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:5px">Tıklayarak kopyala · Kullanıcılara bu linki gönderin, kendileri kayıt olacak</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function adminSatirlar(liste){
+  return liste.map((k,i)=>`
+    <tr id="admin-row-${k.user}">
+      <td style="color:var(--t3);font-family:'DM Mono',monospace">${i+1}</td>
+      <td><strong>${k.user}</strong></td>
+      <td style="max-width:200px">${(k.sektorler||[]).map(s=>{const sx=SEKTORLER.find(x=>x.id===s);return sx?`<span style="font-size:10px">${sx.icon}</span>`:''}).join(' ')||'—'}</td>
+      <td style="color:var(--t3);font-size:12px">${k.tarih||'—'}</td>
+      <td><span class="user-status ${k.aktif===false?'us-pasif':'us-aktif'}">${k.aktif===false?'Pasif':'Aktif'}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-sm" style="font-size:11px" onclick="adminKullaniciBilgi('${k.user}')">Detay</button>
+          <button class="btn btn-sm" style="font-size:11px;color:${k.aktif===false?'var(--green)':'var(--amber)'}" onclick="adminToggleAktif('${k.user}')">${k.aktif===false?'Aktifleştir':'Pasifleştir'}</button>
+          <button class="btn btn-sm btn-d" style="font-size:11px" onclick="adminKullanicSil('${k.user}')">Sil</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function adminFiltre(ara){
+  const k=loadKullanicilar().filter(x=>x.user.toLowerCase().includes(ara.toLowerCase()));
+  const tbody=document.getElementById('admin-tbody');
+  if(tbody) tbody.innerHTML=adminSatirlar(k);
+}
+
+function acYeniKullanici(){
+  showModal(`<div class="modal">
+    <div class="mh"><span class="mh-title">+ Yeni Kullanıcı Ekle</span><button class="btn btn-icon" onclick="adminGeriDon()">←</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="field"><label>Kullanıcı Adı</label><input id="nu-user" placeholder="kullanici_adi"></div>
+        <div class="field"><label>Şifre</label><input id="nu-pass" type="text" placeholder="geçici şifre" value="${rastgeleStr()}"></div>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Sektörler</label>
+        <div class="sektor-grid" id="nu-sektor-grid"></div>
+      </div>
+      <div style="margin-top:14px;padding:12px;background:var(--gold-light);border-radius:var(--rs);border:1px solid var(--gold-border)">
+        <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px">📋 Paylaşılacak Bilgiler</div>
+        <div style="font-size:12px;color:var(--gray-dark);line-height:1.8">
+          🔗 Link: <strong>${window.location.href.split('?')[0]}</strong><br>
+          👤 Kullanıcı Adı: <span id="nu-user-preview">—</span><br>
+          🔑 Şifre: <span id="nu-pass-preview">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="adminGeriDon()">İptal</button>
+      <button class="btn" onclick="bilgileriKopyala()">📋 Bilgileri Kopyala</button>
+      <button class="btn btn-gold" onclick="yeniKullareciKaydet()">Kullanıcı Oluştur</button>
+    </div>
+  </div>`);
+  const grid=document.getElementById('nu-sektor-grid');
+  grid.innerHTML=SEKTORLER.map(s=>`
+    <label class="sektor-cb" id="nscb-${s.id}">
+      <input type="checkbox" value="${s.id}" onchange="toggleNuSektor('${s.id}')">
+      <span class="sektor-icon">${s.icon}</span><span>${s.label}</span>
+    </label>`).join('');
+  document.getElementById('nu-user').addEventListener('input',()=>{
+    document.getElementById('nu-user-preview').textContent=document.getElementById('nu-user').value||'—';
+  });
+  document.getElementById('nu-pass').addEventListener('input',()=>{
+    document.getElementById('nu-pass-preview').textContent=document.getElementById('nu-pass').value||'—';
+  });
+  document.getElementById('nu-user-preview').textContent='—';
+  document.getElementById('nu-pass-preview').textContent=document.getElementById('nu-pass').value;
+}
+
+function toggleNuSektor(id){
+  document.getElementById('nscb-'+id).classList.toggle('on');
+}
+
+function rastgeleStr(){
+  return Math.random().toString(36).slice(2,8).toUpperCase();
+}
+
+function bilgileriKopyala(){
+  const user=document.getElementById('nu-user').value;
+  const pass=document.getElementById('nu-pass').value;
+  const link=window.location.href.split('?')[0];
+  const metin=`REALhub İş Takip Giriş Bilgileri\n\n🔗 Link: ${link}\n👤 Kullanıcı Adı: ${user}\n🔑 Şifre: ${pass}\n\nİlk girişte sektörlerinizi seçmeyi unutmayın.`;
+  navigator.clipboard.writeText(metin).then(()=>toast('Bilgiler kopyalandı ✓')).catch(()=>alert(metin));
+}
+
+function yeniKullareciKaydet(){
+  const user=document.getElementById('nu-user').value.trim();
+  const pass=document.getElementById('nu-pass').value.trim();
+  if(!user||!pass){alert('Kullanıcı adı ve şifre zorunlu!');return}
+  const secilen=Array.from(document.querySelectorAll('#nu-sektor-grid input:checked')).map(x=>x.value);
+  const kullanicilar=loadKullanicilar();
+  if(kullanicilar.find(k=>k.user===user)){alert('Bu kullanıcı adı zaten var!');return}
+  kullanicilar.push({user,pass,sektorler:secilen,tarih:bugunTR(),aktif:true});
+  saveKullanicilar(kullanicilar);
+  toast('Kullanıcı oluşturuldu ✓');
+  showModal(adminPanelHTML());
+}
+
+function adminGeriDon(){
+  showModal(adminPanelHTML());
+}
+
+function adminKullaniciBilgi(user){
+  const k=loadKullanicilar().find(x=>x.user===user);if(!k)return;
+  const link=window.location.href.split('?')[0];
+  showModal(`<div class="modal">
+    <div class="mh"><span class="mh-title">👤 ${k.user}</span><button class="btn btn-icon" onclick="adminGeriDon()">←</button></div>
+    <div class="mb">
+      <div class="fg">
+        <div class="field"><label>Kullanıcı Adı</label><div style="font-size:14px;font-weight:600;padding:6px 0">${k.user}</div></div>
+        <div class="field"><label>Kayıt Tarihi</label><div style="font-size:13px;padding:6px 0">${k.tarih||'—'}</div></div>
+        <div class="field"><label>Durum</label><div style="padding:6px 0"><span class="user-status ${k.aktif===false?'us-pasif':'us-aktif'}">${k.aktif===false?'Pasif':'Aktif'}</span></div></div>
+        <div class="field"><label>Sektörler</label><div style="font-size:13px;padding:6px 0">${(k.sektorler||[]).map(s=>{const sx=SEKTORLER.find(x=>x.id===s);return sx?sx.icon+' '+sx.label:''}).join(', ')||'—'}</div></div>
+        <div class="field fc"><label>Şifre Sıfırla</label>
+          <div style="display:flex;gap:8px">
+            <input id="yeni-pass-${k.user}" type="text" value="${rastgeleStr()}" style="flex:1;font-family:'DM Mono',monospace;font-size:13px;padding:7px 10px;border:1.5px solid var(--gray-mid);border-radius:var(--rs);outline:none;background:var(--gray-light)">
+            <button class="btn btn-sm btn-gold" onclick="sifreSifirla('${k.user}')">Sıfırla</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding:12px;background:var(--gold-light);border-radius:var(--rs);border:1px solid var(--gold-border)">
+        <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px">📎 Giriş Bilgilerini Paylaş</div>
+        <div class="link-box" onclick="navigator.clipboard.writeText('REALhub İş Takip\\n\\n🔗 ${link}\\n👤 Kullanıcı: ${k.user}\\n🔑 Şifre: '+document.getElementById('yeni-pass-${k.user}').value).then(()=>toast('Kopyalandı ✓'))">
+          🔗 ${link}<br>👤 ${k.user} · 🔑 <span id="pass-show-${k.user}">${k.pass}</span>
+        </div>
+        <div style="font-size:11px;color:var(--t3);margin-top:4px">Tıklayarak kopyala</div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="adminGeriDon()">Geri</button>
+      <button class="btn btn-d" onclick="adminKullanicSil('${k.user}')">Kullanıcıyı Sil</button>
+    </div>
+  </div>`);
+}
+
+function sifreSifirla(user){
+  const yeniPass=document.getElementById('yeni-pass-'+user).value.trim();
+  if(!yeniPass){alert('Şifre boş olamaz!');return}
+  const k=loadKullanicilar();
+  const u=k.find(x=>x.user===user);
+  if(u){u.pass=yeniPass;saveKullanicilar(k);toast('Şifre güncellendi ✓');adminKullaniciBilgi(user);}
+}
+
+function adminToggleAktif(user){
+  const k=loadKullanicilar();
+  const u=k.find(x=>x.user===user);
+  if(u){u.aktif=u.aktif===false?true:false;saveKullanicilar(k);showModal(adminPanelHTML());toast('Durum güncellendi ✓');}
+}
+
+function adminKullanicSil(user){
+  if(!confirm(`"${user}" kullanıcısı silinsin mi? Bu işlem geri alınamaz.`))return;
+  saveKullanicilar(loadKullanicilar().filter(k=>k.user!==user));
+  showModal(adminPanelHTML());toast('Kullanıcı silindi');
+}
+
+function adminSifreDegistir(){
+  const yeni=prompt('Yeni admin şifresi:','');
+  if(!yeni)return;
+  localStorage.setItem(ADMIN_PASS_KEY,yeni);
+  toast('Admin şifresi güncellendi ✓');
+}
+
+function linkKopyala(url){
+  navigator.clipboard.writeText(url).then(()=>toast('Link kopyalandı ✓')).catch(()=>alert(url));
+}
+
+// Pasif kullanıcı girişini engelle
+const _origGiris=girişYap;
+// Override girişYap to check aktif
+
 function showModal(h){document.getElementById('mroot').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()">${h}</div>`}
 function closeModal(){document.getElementById('mroot').innerHTML=''}
 
